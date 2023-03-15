@@ -69,7 +69,7 @@ class Jumping:
         plt.show()
 
 
-df = pd.read_csv("All_Group_Member_Shams_Harshil_Jasmine-Data.csv")
+df = pd.read_csv("../All_Group_Member_Shams_Harshil_Jasmine-Data.csv")
 timeSec = df['Total Sec']
 accelerationX = df["Acceleration x (m/s^2)"]
 accelerationY = df["Acceleration y (m/s^2)"]

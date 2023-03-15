@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("All_Group_Member_Shams_Harshil_Jasmine-Data.csv")
+df = pd.read_csv("../All_Group_Member_Shams_Harshil_Jasmine-Data.csv")
 timeSec = df['Total Sec']
 
 accelerationX = df["Acceleration x (m/s^2)"]
