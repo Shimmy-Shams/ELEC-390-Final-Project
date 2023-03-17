@@ -1,9 +1,32 @@
-import pandas as pd
-import numpy as np
+
+# Main.py
+
+# Importing all the necessary libraries
+import h5py
 import matplotlib.pyplot as plt
+from data_processing import process_data, write_data_to_h5, read_data_from_h5, display_data
 
 
-# Creating the class walking
+csv_file_paths = [
+    'Data/Raw_Data_Harshil.csv',
+    'Data/Raw_Data_Shams.csv',
+    'Data/Raw_Data_Jasmine.csv'
+]
+
+# Read and segment the data
+train_df, test_df = process_data(csv_file_paths)
+
+# Save the data to the HDF5 file
+write_data_to_h5(train_df, test_df, csv_file_paths)
+
+# Read the data from the HDF5 file
+original_data, train_data, train_labels, test_data, test_labels = read_data_from_h5()
+
+# Display the data using the display_data() function
+display_data(original_data, train_data, train_labels, test_data, test_labels)
+
+
+# Creating the class walking with all the necessary diagrams.
 class Walking:
     def __init__(self, time, accelerationX, accelerationY, accelerationZ):
         self.time = time
@@ -21,7 +44,8 @@ class Walking:
         plt.show()
 
         # Plotting a histogram of the walking acceleration volumes
-        plt.hist([self.accelerationX, self.accelerationY, self.accelerationZ], bins=20, color=['red', 'green', 'blue'], alpha=0.5)
+        plt.hist([self.accelerationX, self.accelerationY, self.accelerationZ], bins=20, color=['red', 'green', 'blue'],
+                 alpha=0.5)
         plt.title("Walking Acceleration Histogram")
         plt.xlabel("Acceleration [m/s^2]")
         plt.ylabel("Count")
@@ -36,7 +60,7 @@ class Walking:
         plt.show()
 
 
-# Creating the class Jumping
+# Creating the class Jumping with all the necessary diagrams.
 class Jumping:
     def __init__(self, time, accelerationX, accelerationY, accelerationZ):
         self.time = time
@@ -54,7 +78,8 @@ class Jumping:
         plt.show()
 
         # Plotting a histogram of the jumping acceleration volumes
-        plt.hist([self.accelerationX, self.accelerationY, self.accelerationZ], bins=20, color=['red', 'green', 'blue'], alpha=0.5)
+        plt.hist([self.accelerationX, self.accelerationY, self.accelerationZ], bins=20, color=['red', 'green', 'blue'],
+                 alpha=0.5)
         plt.title("Jumping Acceleration Histogram")
         plt.xlabel("Acceleration [m/s^2]")
         plt.ylabel("Count")
@@ -67,24 +92,3 @@ class Jumping:
         plt.xlabel("Acceleration X [m/s^2]")
         plt.ylabel("Acceleration Y [m/s^2]")
         plt.show()
-
-
-df = pd.read_csv("../All_Group_Member_Shams_Harshil_Jasmine-Data.csv")
-timeSec = df['Total Sec']
-accelerationX = df["Acceleration x (m/s^2)"]
-accelerationY = df["Acceleration y (m/s^2)"]
-accelerationZ = df["Acceleration z (m/s^2)"]
-
-
-# Create Walking and Jumping objects based on conditions for each activity
-walking_mask = ((accelerationX < 20) & (accelerationX > -20)) & ((accelerationY < 20) & (accelerationY > -20)) & ((accelerationZ < 15) & (accelerationZ > -15))
-walking_data = df[walking_mask]
-walking = Walking(walking_data['Total Sec'], walking_data['Acceleration x (m/s^2)'], walking_data['Acceleration y (m/s^2)'], walking_data['Acceleration z (m/s^2)'])
-
-jumping_mask = ~walking_mask
-jumping_data = df[jumping_mask]
-jumping = Jumping(jumping_data['Total Sec'], jumping_data['Acceleration x (m/s^2)'], jumping_data['Acceleration y (m/s^2)'], jumping_data['Acceleration z (m/s^2)'])
-
-# Plot acceleration data for Walking and Jumping activities
-walking.plot_acceleration()
-jumping.plot_acceleration()
