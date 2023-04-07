@@ -1,120 +1,153 @@
-# data_processing_test_code.py
+#
+# Data Processing:  This reads the data from the CSV file, writes it to the HDF5, displays the data
+#                   and then cleans the data for any visualization
+#
 
-import os
-import h5py
-import numpy as np
 import pandas as pd
+import numpy as np
+import h5py
+import os
 from sklearn.model_selection import train_test_split
 
 
-# Function to process the data from the csv files
-def process_data(csv_file_paths):
-    # Number of Data collected per second
-    sample_rate = 100
-    window_duration = 5  # In seconds
-    rows_per_window = sample_rate * window_duration
+# -----------------------------------------------------------------------------------------------
+# ------------ Reading, Writing, Storing and Printing the Data From the Files -------------------
 
-    # Creating a dataframe to store all the data
-    segmented_dfs = []
-
-    # Reading all the CSV Files and loading them into the Pandas Dataframe
-    for file_path in csv_file_paths:
+# Reading the data from the csv file and storing it in one dataframe
+def load_data(file_paths):
+    dfs = []
+    for i, file_path in enumerate(file_paths):
         df = pd.read_csv(file_path)
 
-        # Segmenting the data into 5 second windows and assigning labels
-        windows = []
-        labels = []
+        # One-hot encoding the 'Activity' column: 0 indicates it's True, 1 indicates it's False
+        df = pd.concat([df.drop('Activity', axis=1), pd.get_dummies(df['Activity'], prefix='Activity')], axis=1)
 
-        for i in range(0, len(df), rows_per_window):
-            window = df.iloc[i:i + rows_per_window]
+        dfs.append(df)
+    return pd.concat(dfs)
 
-            # Checking length of window to ensure that only complete 5-second windows are used.
-            if len(window) == rows_per_window:
-                windows.append(window)  # Appends if window is equal to rows_per_window
-                labels.append(i // rows_per_window)  # Generating a unique label for each 5-second window
 
-        # Concatenate the windows and labels data to create the final dataset
-        segmented_df = pd.concat(windows).assign(window_label=labels * rows_per_window)
-        segmented_dfs.append(segmented_df)
+# Segmenting the dataframe into 5 second windows
+def segment_data(df, window_size, sample_rate):
+    n_samples = len(df)
+    window_length = window_size * sample_rate
+    segments = []
+    for i in range(0, n_samples, window_length):
+        segment = df.iloc[i:i + window_length].copy()  # Add .copy() here
+        if len(segment) == window_length:
+            segments.append(segment)
+    return segments
 
-    # Combine the segmented dataframes from all csv files
-    combined_df = pd.concat(segmented_dfs)
-    # Split the combined dataframe into training data and test data
-    train_df, test_df = train_test_split(combined_df, test_size=0.1, random_state=42,
-                                         stratify=combined_df['window_label'])
 
+# Splitting the data into training data and testing data
+def create_splits(segments, test_size=0.1):
+    train_df, test_df = train_test_split(segments, test_size=test_size, random_state=42)
+    train_df = pd.concat(train_df).reset_index(drop=True)
+    test_df = pd.concat(test_df).reset_index(drop=True)
     return train_df, test_df
 
 
-# Function to write the data to the HDF5 file
-def write_data_to_h5(train_df, test_df, csv_file_paths, h5_filename='data.h5'):
-    # Writing and saving the training and testing dataset into the HDF5 file
-    with h5py.File('data.h5', 'w') as h5f:
-        # Create a group for the original data
-        original_data_group = h5f.create_group('Original_data')
+# Function to process the meta data
+def process_meta_data_time(meta_data_time):
+    df_md_time = pd.read_csv(meta_data_time)
 
-        # Iterating through the CSV files and storing the original data in the HDF5 file
-        for csv_file in csv_file_paths:
-            file_name = os.path.splitext(os.path.basename(csv_file))[0]
-            df = pd.read_csv(csv_file)
-            original_data_group.create_dataset(file_name, data=df.to_numpy())
+    # Calculate the duration of each time event
+    df_md_time['duration'] = df_md_time['experiment time'].diff()
+    df_md_time.loc[0, 'duration'] = 0
 
-        # Create groups for the training and test data
-        training_group = h5f.create_group("Training")
-        testing_group = h5f.create_group("Testing")
+    # Calculate the end time of each event
+    df_md_time['end_time'] = df_md_time['experiment time'].shift(-1)
+    df_md_time.loc[len(df_md_time) - 1, 'end time'] = df_md_time['experiment time'].iloc[-1]
 
-        # Storing the training and test data in the HDF5 file
-        training_group.create_dataset('data', data=train_df.drop(columns='window_label').to_numpy())
-        training_group.create_dataset('labels', data=train_df['window_label'].to_numpy())
+    # Convert the system to datetime
+    df_md_time['system_time_dt'] = pd.to_datetime(df_md_time['system time text'])
 
-        testing_group.create_dataset('data', data=test_df.drop(columns='window_label').to_numpy())
-        testing_group.create_dataset('labels', data=test_df['window_label'].to_numpy())
+    return df_md_time
 
 
-# Function to read the data from the HDF5 file
-def read_data_from_h5(h5_filename='data.h5'):
-    # Reading the HDF5 file
-    with h5py.File(h5_filename, 'r') as h5f:
-        # Accessing the original data group
-        original_data_group = h5f['Original_data']
+# Writing the data to a hdf5 file
+def write_to_hdf5(original_data, file_paths, train_df, test_df):
+    with h5py.File('Combined_data.hdf5', 'w') as h5f:
+        start_idx = 0
+        for file_path in file_paths:
+            file_name = os.path.splitext(os.path.basename(file_path))[0]
+            df = pd.read_csv(file_path)
 
-        # Retrieve the original data
+            # Calculate the number of rows for this CSV file
+            rows_count = len(df)
+
+            # Extract the relevant rows from the combined data
+            person_data = original_data[start_idx:start_idx + rows_count]
+
+            # Create a group for the current person and store their data
+            person_group = h5f.create_group(file_name)
+            person_group.create_dataset('data', data=person_data.to_numpy())
+
+            start_idx += rows_count
+
+        # Creating the dataset group with train and test groups
+        dataset_group = h5f.create_group('dataset')
+        train_group = dataset_group.create_group('train')
+        test_group = dataset_group.create_group('test')
+
+        # Storing the train and test data in their respective groups
+        train_group.create_dataset('train_data', data=train_df.values)
+        test_group.create_dataset('test_data', data=test_df.values)
+
+
+# Reading the contents in the HDF5 file
+def reading_from_hdf5(h5_filename='Combined_data.hdf5'):
+    with h5py.File(h5_filename, 'r') as f:
         original_data = {}
-        for dataset_name in original_data_group.keys():
-            original_data[dataset_name] = original_data_group[dataset_name][()]
+        for dataset_name in f.keys():
+            if dataset_name != 'dataset':
+                original_data[dataset_name] = f[dataset_name]['data'][()]
 
-        # Accessing the training and test data groups
-        training_group = h5f['Training']
-        testing_group = h5f['Testing']
+        train_data = f['dataset']['train']
+        test_data = f['dataset']['test']
 
-        # Read the training data
-        train_data = np.array(training_group['data'])
-        train_labels = np.array(training_group['labels'])
+        column_names = ['Time (s)', 'Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)',
+                        'Absolute acceleration (m/s^2)', 'Activity_Walking', 'Activity_Jumping']
 
-        # Read the testing data
-        test_data = np.array(testing_group['data'])
-        test_labels = np.array(testing_group['labels'])
+        train_data = pd.DataFrame(train_data['train_data'][()], columns=column_names)
+        test_data = pd.DataFrame(test_data['test_data'][()], columns=column_names)
 
-    return original_data, train_data, train_labels, test_data, test_labels
+    return original_data, train_data, test_data
 
 
-# Function to print the data
-def display_data(original_data, train_data, train_labels, test_data, test_labels):
-    # Display the original data
+# Code for displaying the overall data
+def display_data(original_data, train_data, test_data):
+    # Displaying original data and data from the HDF5 file
+    # Defining the column names
+    column_names = ['Time (s)', 'Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)',
+                    'Absolute acceleration (m/s^2)', 'Activity_Walking', 'Activity_Jumping']
+
+    # Display the original data from each group member
     print("Original Data:")
     for dataset_name, data in original_data.items():
         print(f"\nOriginal data for {dataset_name}: ")
-        print(pd.DataFrame(data))
+        print(pd.DataFrame(data, columns=column_names))
 
-    # Display the training data
-    print("\nTraining Data: ")
-    print(pd.DataFrame(train_data))
-    print("\nTraining Labels: ")
-    print(pd.DataFrame(train_labels))
+    # Printing the test and train data
+    print("\nTrain Data (from HDF5):")
+    print(train_data)
 
-    # Display the testing data
-    print("\nTesting Data: ")
-    print(pd.DataFrame(test_data))
-    print("\nTesting Labels: ")
-    print(pd.DataFrame(test_labels))
+    print("\nTest Data (from HDF5):")
+    print(test_data)
 
+
+# -----------------------------------------------------------------------------------------
+# ------------- Functions Needed for Accurate Data Visualization --------------------------
+
+# Additional function to extract time and acceleration from the original data for the data_visualization file
+def extract_time_and_acceleration(original_data, dataset_name):
+    # Defining the column names:
+    column_names = ['Time (s)', 'Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)',
+                    'Absolute acceleration (m/s^2)', 'Activity_Walking', 'Activity_Jumping']
+
+    data = pd.DataFrame(original_data[dataset_name], columns=column_names)
+    time = data['Time (s)']
+    accelerationX = data['Acceleration x (m/s^2)']
+    accelerationY = data['Acceleration y (m/s^2)']
+    accelerationZ = data['Acceleration z (m/s^2)']
+
+    return time, accelerationX, accelerationY, accelerationZ
