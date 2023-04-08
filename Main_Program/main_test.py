@@ -11,6 +11,7 @@ import data_visualization as dv
 import data_processing as dp
 import data_classifier as dc
 import pandas as pd
+import numpy as np
 import joblib
 
 
@@ -64,18 +65,13 @@ test_data_filtered = dpp.moving_average_filter(test_data)
 
 
 # Select the filtered data with window size 50
-selected_window_size = 100
-train_data_filtered_5 = train_data_filtered[f'window_size_{selected_window_size}']
-test_data_filtered_5 = test_data_filtered[f'window_size_{selected_window_size}']
-
-# Applying exponential moving average
-train_data_ema_filtered = dpp.exponential_moving_average_filter(train_data_filtered_5, alpha=0.1)
-test_data_ema_filtered = dpp.exponential_moving_average_filter(test_data_filtered_5, alpha=0.1)
-
+selected_window_size = 50
+train_data_filtered_50 = train_data_filtered[f'window_size_{selected_window_size}']
+test_data_filtered_50 = test_data_filtered[f'window_size_{selected_window_size}']
 
 # Removing outliers
-train_data_no_outliers = dpp.remove_outliers(train_data_ema_filtered, threshold=3)
-test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=3)
+train_data_no_outliers = dpp.remove_outliers(train_data_filtered_50, threshold=1.5)
+test_data_no_outliers = dpp.remove_outliers(test_data_filtered_50, threshold=1.5)
 
 # Applying normalization
 train_data_normalized = dpp.normalize_data(train_data_no_outliers)
@@ -114,17 +110,6 @@ test_data_normalized_y = [1 if segment['Activity_Jumping'].iloc[0] == 1 else 0 f
 
 print("train_data_normalized_y length:", len(train_data_normalized_y))
 print("test_data_normalized_y length:", len(test_data_normalized_y))
-
-# Before SMOTE
-print("Original class distribution:")
-print(pd.Series(train_data_normalized_y).value_counts())
-
-# Handle class imbalance
-#train_data_features, train_data_normalized_y = dpp.handle_imbalance(train_data_features, train_data_normalized_y)
-
-# After SMOTE
-print("Resampled class distribution:")
-print(pd.Series(train_data_normalized_y).value_counts())
 
 # Train and evaluate the classifier
 log_reg_model = dc.train_and_evaluate_logistic_regression(train_data_normalized_y, test_data_normalized_y, train_data_features, test_data_features)

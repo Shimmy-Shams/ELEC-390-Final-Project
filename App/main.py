@@ -5,7 +5,7 @@ import tkinter as tk
 import pandas as pd
 import joblib
 from Main_Program.data_extracting_features import extract_features, convert_to_segments, save_features_to_csv
-from Main_Program.data_pre_processing import check_nan_null_values, handle_missing_values, exponential_moving_average_filter, normalize_data, remove_outliers, \
+from Main_Program.data_pre_processing import check_nan_null_values, normalize_data, remove_outliers, \
     moving_average_filter
 
 
@@ -22,6 +22,25 @@ def clean_data_columns(data):
 
     data = data.rename(columns=column_mapping)
 
+    # Check if the 'Activity' column is present, and if not, add it
+    if 'Activity' not in data.columns:
+        data.insert(len(data.columns), 'Activity', None)
+        activity_count = int(input("Enter the number of different activities in the file: "))
+
+        if activity_count == 1:
+            activity_name = input("Enter the name of the activity (e.g., Walking or Jumping): ")
+            data['Activity'] = activity_name
+
+        else:
+            for i in range(activity_count):
+                activity_name = input(f"Enter the name of activity {i + 1} (e.g., Walking or Jumping): ")
+                start_time = float(input(f"Enter the start time (in seconds) of activity {i + 1}: "))
+                end_time = float(input(f"Enter the end time (in seconds) of activity {i + 1}: "))
+
+                start_row = data[data['Time (s)'] >= start_time].index[0]
+                end_row = data[data['Time (s)'] <= end_time].index[-1]
+
+                data.loc[start_row:end_row, 'Activity'] = activity_name
 
     return data
 
@@ -37,21 +56,9 @@ def classify_motion(filepath):
 
     # Preprocess the data
     data_check_null = check_nan_null_values(data, data_name)
-
-    # Handle Missing Values
-    data_handle_missing_values = handle_missing_values(data, method='drop')
-
-    # Apply Moving Average
-    data_filtered_dict = moving_average_filter(data_handle_missing_values)
-
-    # Select the filtered data with window size 50
-    selected_window_size = 100
-    data_filtered_window_size = data_filtered_dict[f'window_size_{selected_window_size}']
-
-    # Applying the exponential moving average
-    data_filtered = exponential_moving_average_filter(data_filtered_window_size)
-
-    data_no_outliers = remove_outliers(data_filtered, threshold=3)
+    data_filtered_dict = moving_average_filter(data)
+    data_filtered = data_filtered_dict['window_size_50']
+    data_no_outliers = remove_outliers(data_filtered)
     data_normalized = normalize_data(data_no_outliers)
 
     # Segment the data
@@ -74,23 +81,13 @@ def classify_motion(filepath):
     for idx, segment in enumerate(segmented_data):
         start_index = segment.index[0]
         end_index = segment.index[-1]
-        prediction = predictions[idx]
-        data_normalized.loc[start_index:end_index, 'Prediction'] = prediction
+        data_normalized.loc[start_index:end_index, 'Prediction'] = predictions[idx]
 
     # Fill 'None' values in the 'Prediction' column with the previous prediction value
     data_normalized['Prediction'].fillna(method='ffill', inplace=True)
 
-    # Add a new 'Activity' column with 'Unknown' values
-    data_normalized['Activity'] = 'Unknown'
-
-    # Assign the activity based on the 'Prediction' column
-    data_normalized.loc[data_normalized['Prediction'] == 0, 'Activity'] = 'Walking'
-    data_normalized.loc[data_normalized['Prediction'] == 1, 'Activity'] = 'Jumping'
-
     # Save the output as a CSV file
-    data_normalized.to_csv(
-        'C:/Users/User/Desktop/QUEENS U/ELEC 390/ELEC 390 Final Project/Main_Program/Data/Output_From_App/output.csv',
-        index=False)
+    data_normalized.to_csv('C:/Users/User/Desktop/QUEENS U/ELEC 390/ELEC 390 Final Project/Main_Program/Data/Output_From_App/output.csv', index=False)
 
     return data_check_null, data_normalized
 

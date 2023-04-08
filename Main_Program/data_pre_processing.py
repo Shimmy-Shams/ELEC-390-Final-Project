@@ -4,9 +4,10 @@
 #
 
 # Import Statements
-from sklearn import preprocessing
+import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
-from imblearn.over_sampling import SMOTE
+from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 
 
@@ -57,25 +58,14 @@ def moving_average_filter(df):
         axes[i].set_ylabel("Acceleration (m/s^2)")
         axes[i].legend()
 
-    #plt.tight_layout()
+    plt.tight_layout()
     #plt.show()
 
     return filtered_data
 
 
-# Applying an exponential moving average to further reduce noise
-def exponential_moving_average_filter(df, alpha=0.1):
-    filtered_df = df.copy()
-    acceleration_axes = ['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']
-
-    for col in acceleration_axes:
-        filtered_df[col] = df[col].ewm(alpha=alpha).mean()
-
-    return filtered_df
-
-
 # Removing any potential outliers in the data
-def remove_outliers(data, threshold=2):
+def remove_outliers(data, threshold=1.5):
     Q1 = data.quantile(0.25, numeric_only=True)
     Q3 = data.quantile(0.75, numeric_only=True)
     IQR = Q3 - Q1
@@ -84,13 +74,6 @@ def remove_outliers(data, threshold=2):
     data_filtered = data[~((left < right) | (data > (Q3 + threshold * IQR))).any(axis=1)]
 
     return data_filtered
-
-
-# Handling imbalance of data
-def handle_imbalance(X, y):
-    smote = SMOTE()
-    X_resampled, y_resampled = smote.fit_resample(X, y)
-    return X_resampled, y_resampled
 
 
 # Normalizing the data
@@ -112,7 +95,7 @@ def normalize_data(data):
         axes[i].set_ylabel("Acceleration (m/s^2)")
         axes[i].legend()
 
-    #plt.tight_layout()
-    #plt.show()
+    plt.tight_layout()
+    plt.show()
 
     return data_normalized
