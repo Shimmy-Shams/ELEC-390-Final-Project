@@ -32,7 +32,7 @@ def segment_data(df, window_size, sample_rate):
     window_length = window_size * sample_rate
     segments = []
     for i in range(0, n_samples, window_length):
-        segment = df.iloc[i:i + window_length].copy()  # Add .copy() here
+        segment = df.iloc[i:i + window_length].copy()
         if len(segment) == window_length:
             segments.append(segment)
     return segments

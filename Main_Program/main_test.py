@@ -12,6 +12,7 @@ import data_processing as dp
 import data_classifier as dc
 import pandas as pd
 import numpy as np
+import joblib
 
 
 # --------------------------------------------------------------------------------
@@ -94,10 +95,12 @@ train_data_features = de.extract_features(train_data_normalized_segments)
 test_data_features = de.extract_features(test_data_normalized_segments)
 
 # Saving the extracted features into a csv file.
-train_data_filename = "Data/train_data_features.csv"
-test_data_filename = "Data/test_data_features.csv"
+train_data_filename = "Data/Features/train_data_features.csv"
+test_data_filename = "Data/Features/test_data_features.csv"
 
-de.save_features_to_csv(train_data_features, test_data_features, train_data_filename, test_data_filename)
+de.save_features_to_csv(train_data_features, train_data_filename)
+de.save_features_to_csv(test_data_features, test_data_filename)
+
 
 # --------------------------------------------------------------------------------
 # -------------------- Step 6: Train and Evaluate Classifier ---------------------
@@ -109,5 +112,10 @@ print("train_data_normalized_y length:", len(train_data_normalized_y))
 print("test_data_normalized_y length:", len(test_data_normalized_y))
 
 # Train and evaluate the classifier
-log_reg_model = dc.train_and_evaluate_logistic_regression(train_data_normalized_y, test_data_normalized_y,
-                                                          train_data_features, test_data_features)
+log_reg_model = dc.train_and_evaluate_logistic_regression(train_data_normalized_y, test_data_normalized_y, train_data_features, test_data_features)
+
+
+# --------------------------------------------------------------------------------
+# -------------------- Step 7: Deploying Classifier to An App ---------------------
+# Saving the logistic regression model to a file for the app
+joblib.dump(log_reg_model, 'log_reg_model.pkl')

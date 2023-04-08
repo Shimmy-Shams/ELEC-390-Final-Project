@@ -21,8 +21,8 @@ def convert_to_segments(data, window_size, sample_rate):
 
 # Code to extract the features
 def extract_features(segments):
-    feature_names = ['max', 'min', 'range', 'mean', 'median', 'variance',
-                     'std', 'skewness', 'kurtosis', 'rms']
+    feature_names = ['max', 'min', 'range', 'mean', 'median', 'variance', 'std',
+                     'skewness', 'kurtosis', 'rms', 'mean_abs_change', 'mean_crossing_rate']
     features = []
 
     for segment in segments:
@@ -40,9 +40,12 @@ def extract_features(segments):
             skewness_value = stats.skew(data)
             kurtosis_value = stats.kurtosis(data)
             rms_value = np.sqrt(np.mean(np.square(data)))
+            mean_abs_change = np.mean(np.abs(np.diff(data)))
+            mean_crossing_rate = np.mean(np.diff(data > np.mean(data)))
 
             segment_features.extend([max_value, min_value, range_value, mean_value, median_value,
-                                     variance_value, std_value, skewness_value, kurtosis_value, rms_value])
+                                     variance_value, std_value, skewness_value, kurtosis_value,
+                                     rms_value, mean_abs_change, mean_crossing_rate])
 
         features.append(segment_features)
 
@@ -53,16 +56,13 @@ def extract_features(segments):
 
 
 # Saving the features into a csv file.
-def save_features_to_csv(train_data_features, test_data_features, train_data_filename, test_data_filename):
+def save_features_to_csv(data_features, data_filename):
     """
     Save the train and test DataFrames containing extracted features to CSV files.
 
     Args:
-        train_data_features (pd.DataFrame): DataFrame containing features from the training dataset
-        test_data_features (pd.DataFrame): DataFrame containing features from the test dataset
-        train_data_filename (str): File name for the CSV file of the training dataset features
-        test_data_filename (str): File name for the CSV file of the test dataset features
+        data_features (pd.DataFrame): DataFrame containing features from the training dataset
+        data_filename (str): File name for the CSV file of the training dataset features
     """
 
-    train_data_features.to_csv(train_data_filename, index=False)
-    test_data_features.to_csv(test_data_filename, index=False)
+    data_features.to_csv(data_filename, index=False)

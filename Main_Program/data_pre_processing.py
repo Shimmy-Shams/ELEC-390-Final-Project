@@ -66,10 +66,12 @@ def moving_average_filter(df):
 
 # Removing any potential outliers in the data
 def remove_outliers(data, threshold=1.5):
-    Q1 = data.quantile(0.25)
-    Q3 = data.quantile(0.75)
+    Q1 = data.quantile(0.25, numeric_only=True)
+    Q3 = data.quantile(0.75, numeric_only=True)
     IQR = Q3 - Q1
-    data_filtered = data[~((data < (Q1 - threshold * IQR)) | (data > (Q3 + threshold * IQR))).any(axis=1)]
+
+    left, right = data.align(Q1 - threshold * IQR, axis=1, copy=False)
+    data_filtered = data[~((left < right) | (data > (Q3 + threshold * IQR))).any(axis=1)]
 
     return data_filtered
 

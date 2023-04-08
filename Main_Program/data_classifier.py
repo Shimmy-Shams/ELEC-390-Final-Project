@@ -24,7 +24,7 @@ def train_and_evaluate_logistic_regression(train_data_normalized_y, test_data_no
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
     # Create the logistic regression model
-    log_reg = LogisticRegression(max_iter=1000)
+    log_reg = LogisticRegression(max_iter=10000)
 
     # Train the model
     log_reg.fit(X_train, y_train)
