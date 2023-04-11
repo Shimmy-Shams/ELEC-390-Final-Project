@@ -3,6 +3,8 @@
 # Course: ELEC 390
 
 # Main.py
+# JACKPOT!
+# Code that works by normalizing the data after feature extraction
 
 # Importing all the necessary libraries
 import data_extracting_features as de
@@ -61,7 +63,9 @@ test_data_handle_missing_values = dpp.handle_missing_values(test_data, method='d
 # Applying moving average
 train_data_filtered = dpp.moving_average_filter(train_data)
 test_data_filtered = dpp.moving_average_filter(test_data)
-
+# Plot the moving average filter
+dpp.plot_filtered_data(train_data, train_data_filtered)
+dpp.plot_filtered_data(test_data, test_data_filtered)
 
 # Select the filtered data with window size 50
 selected_window_size = 100
@@ -69,34 +73,23 @@ train_data_filtered_5 = train_data_filtered[f'window_size_{selected_window_size}
 test_data_filtered_5 = test_data_filtered[f'window_size_{selected_window_size}']
 
 # Applying exponential moving average
-train_data_ema_filtered = dpp.exponential_moving_average_filter(train_data_filtered_5, alpha=0.1)
-test_data_ema_filtered = dpp.exponential_moving_average_filter(test_data_filtered_5, alpha=0.1)
+train_data_ema_filtered = dpp.exponential_moving_average_filter(train_data_filtered_5, alpha=0.2)
+test_data_ema_filtered = dpp.exponential_moving_average_filter(test_data_filtered_5, alpha=0.2)
 
 
 # Removing outliers
-train_data_no_outliers = dpp.remove_outliers(train_data_ema_filtered, threshold=3)
-test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=3)
-
-# Applying normalization
-train_data_normalized = dpp.normalize_data(train_data_no_outliers)
-test_data_normalized = dpp.normalize_data(test_data_no_outliers)
-
-
-# Save data to HDF5 file
-dp.write_to_hdf5(data, csv_file_paths, train_data_normalized, test_data_normalized)
-original_data, train_data_normalized, test_data_normalized = dp.reading_from_hdf5()
-#dp.display_data(original_data, train_data_normalized, test_data_normalized)
+train_data_no_outliers = dpp.remove_outliers(train_data_ema_filtered, threshold=2)
+test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=2)
 
 # --------------------------------------------------------------------------------
 # -------------------- Step 5: Feature Extraction --------------------------------
-# Convert the normalized data back into segments
-train_data_normalized_segments = de.convert_to_segments(train_data_normalized, window_size, sample_rate)
-test_data_normalized_segments = de.convert_to_segments(test_data_normalized, window_size, sample_rate)
+# Convert the raw data into segments
+train_data_segments = de.convert_to_segments(train_data_no_outliers, window_size, sample_rate)
+test_data_segments = de.convert_to_segments(test_data_no_outliers, window_size, sample_rate)
 
-
-# Use feature extraction
-train_data_features = de.extract_features(train_data_normalized_segments)
-test_data_features = de.extract_features(test_data_normalized_segments)
+# Extract features from the segments
+train_data_features = de.extract_features(train_data_segments)
+test_data_features = de.extract_features(test_data_segments)
 
 # Saving the extracted features into a csv file.
 train_data_filename = "Data/Features/train_data_features.csv"
@@ -107,30 +100,52 @@ de.save_features_to_csv(test_data_features, test_data_filename)
 
 
 # --------------------------------------------------------------------------------
+# -------------------- Step 4: Data Preprocessing --------------------------------
+# Apply normalization to the raw training and test data sets
+train_data_normalized = dpp.normalize_data(train_data_no_outliers)
+test_data_normalized = dpp.normalize_data(test_data_no_outliers)
+dpp.plot_normalized_data_histograms(train_data_normalized)
+dpp.plot_normalized_data_histograms(test_data_normalized)
+
+
+# Convert the normalized data back into segments
+train_data_normalized_segments = de.convert_to_segments(train_data_normalized, window_size, sample_rate)
+test_data_normalized_segments = de.convert_to_segments(test_data_normalized, window_size, sample_rate)
+
+
+# --------------------------------------------------------------------------------
 # -------------------- Step 6: Train and Evaluate Classifier ---------------------
 # Extract target variable for each segment
-train_data_normalized_y = [1 if segment['Activity_Jumping'].iloc[0] == 1 else 0 for segment in train_data_normalized_segments]
-test_data_normalized_y = [1 if segment['Activity_Jumping'].iloc[0] == 1 else 0 for segment in test_data_normalized_segments]
+train_data_y = [1 if segment['Activity_Jumping'].iloc[0] == 1 else 0 for segment in train_data_segments]
+test_data_y = [1 if segment['Activity_Jumping'].iloc[0] == 1 else 0 for segment in test_data_segments]
 
-print("train_data_normalized_y length:", len(train_data_normalized_y))
-print("test_data_normalized_y length:", len(test_data_normalized_y))
+
+print("train_data_normalized_y length:", len(train_data_y))
+print("test_data_normalized_y length:", len(test_data_y))
 
 # Before SMOTE
 print("Original class distribution:")
-print(pd.Series(train_data_normalized_y).value_counts())
+print(pd.Series(train_data_y).value_counts())
 
 # Handle class imbalance
-#train_data_features, train_data_normalized_y = dpp.handle_imbalance(train_data_features, train_data_normalized_y)
+train_data_features, train_dataset_y = dpp.handle_imbalance(train_data_features, train_data_y)
 
 # After SMOTE
 print("Resampled class distribution:")
-print(pd.Series(train_data_normalized_y).value_counts())
+print(pd.Series(train_dataset_y).value_counts())
 
 # Train and evaluate the classifier
-log_reg_model = dc.train_and_evaluate_logistic_regression(train_data_normalized_y, test_data_normalized_y, train_data_features, test_data_features)
+log_reg_model = dc.train_and_evaluate_logistic_regression(train_dataset_y, test_data_y, train_data_features, test_data_features)
 
 
 # --------------------------------------------------------------------------------
 # -------------------- Step 7: Deploying Classifier to An App ---------------------
 # Saving the logistic regression model to a file for the app
 joblib.dump(log_reg_model, 'log_reg_model.pkl')
+
+# --------------------------------------------------------------------------------
+# --------------- Step 1 and 2: Data Collection & Storage ------------------------
+# Save data to HDF5 file
+dp.write_to_hdf5(data, csv_file_paths, train_data_normalized, test_data_normalized)
+original_data, train_data_normalized, test_data_normalized = dp.reading_from_hdf5()
+#dp.display_data(original_data, train_data_normalized, test_data_normalized)

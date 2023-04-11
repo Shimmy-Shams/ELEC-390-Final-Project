@@ -23,11 +23,11 @@ def train_and_evaluate_logistic_regression(train_data_normalized_y, test_data_no
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
     # Create the logistic regression model
-    log_reg = LogisticRegression(max_iter=10000, class_weight='balanced')
+    log_reg = LogisticRegression(max_iter=10000, class_weight='balanced', random_state=42)
 
     # Create a dictionary of hyperparameters to tune
     param_grid = {
-        'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
+        'C': [0.01, 0.1, 1, 10, 100, 1000],
         'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']
     }
 

@@ -39,7 +39,6 @@ def moving_average_filter(df):
     window_sizes = [5, 50, 100]
     filtered_data = {}
 
-    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 15))
     acceleration_axes = ['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']
 
     for i, col in enumerate(acceleration_axes):
@@ -48,10 +47,20 @@ def moving_average_filter(df):
             filtered_df[col] = filtered_df[col].rolling(window=window_size).mean()
             filtered_data[f'window_size_{window_size}'] = filtered_df.dropna()
 
-            axes[i].plot(filtered_df['Time (s)'], filtered_df[col], label=f"Window size {window_size}")
+    return filtered_data
+
+
+# Plotting the filtered data
+def plot_filtered_data(df, filtered_data):
+    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 15))
+    acceleration_axes = ['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']
+
+    for i, col in enumerate(acceleration_axes):
+        for window_size, filtered_df in filtered_data.items():
+            axes[i].scatter(filtered_df['Time (s)'], filtered_df[col], label=f"{window_size}", s=10)
 
         # Plotting the original data
-        axes[i].plot(df['Time (s)'], df[col], label="Original data", alpha=0.3)
+        axes[i].scatter(df['Time (s)'], df[col], label="Original data", alpha=0.3, s=10)
         axes[i].set_title(col)
         axes[i].set_xlabel("Time (s)")
         axes[i].set_ylabel("Acceleration (m/s^2)")
@@ -59,8 +68,6 @@ def moving_average_filter(df):
 
     #plt.tight_layout()
     #plt.show()
-
-    return filtered_data
 
 
 # Applying an exponential moving average to further reduce noise
@@ -87,8 +94,8 @@ def remove_outliers(data, threshold=2):
 
 
 # Handling imbalance of data
-def handle_imbalance(X, y):
-    smote = SMOTE()
+def handle_imbalance(X, y, k_neighbors=4):
+    smote = SMOTE(sampling_strategy='minority', k_neighbors=k_neighbors)
     X_resampled, y_resampled = smote.fit_resample(X, y)
     return X_resampled, y_resampled
 
@@ -101,18 +108,21 @@ def normalize_data(data):
     data_normalized = data.copy()
     data_normalized[columns_to_normalize] = scaler.transform(data[columns_to_normalize])
 
+    return data_normalized
+
+
+def plot_normalized_data_histograms(data_normalized):
     # Plotting the normalized data
     fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 15))
     acceleration_axes = ['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']
 
     for i, col in enumerate(acceleration_axes):
-        axes[i].plot(data_normalized['Time (s)'], data_normalized[col], label=f"Normalized {col}")
+        axes[i].hist(data_normalized[col], bins=50, alpha=0.75, label=f"Normalized {col}")
         axes[i].set_title(f"Normalized {col}")
-        axes[i].set_xlabel("Time (s)")
-        axes[i].set_ylabel("Acceleration (m/s^2)")
+        axes[i].set_xlabel("Acceleration (m/s^2)")
+        axes[i].set_ylabel("Frequency")
         axes[i].legend()
 
     #plt.tight_layout()
-    #plt.show()
+   # plt.show()
 
-    return data_normalized

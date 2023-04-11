@@ -3,6 +3,7 @@
 # Course: ELEC 390
 
 # Main.py
+# Code that works when the data is normalized before feature extraction
 
 # Importing all the necessary libraries
 import data_extracting_features as de
@@ -69,19 +70,23 @@ train_data_filtered_5 = train_data_filtered[f'window_size_{selected_window_size}
 test_data_filtered_5 = test_data_filtered[f'window_size_{selected_window_size}']
 
 # Applying exponential moving average
-train_data_ema_filtered = dpp.exponential_moving_average_filter(train_data_filtered_5, alpha=0.1)
-test_data_ema_filtered = dpp.exponential_moving_average_filter(test_data_filtered_5, alpha=0.1)
+train_data_ema_filtered = dpp.exponential_moving_average_filter(train_data_filtered_5, alpha=0.15)
+test_data_ema_filtered = dpp.exponential_moving_average_filter(test_data_filtered_5, alpha=0.15)
 
 
 # Removing outliers
-train_data_no_outliers = dpp.remove_outliers(train_data_ema_filtered, threshold=3)
-test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=3)
+train_data_no_outliers = dpp.remove_outliers(train_data_ema_filtered, threshold=2)
+test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=2)
+
+# Apply normalization to the raw training and test data sets
+train_data_normalized = dpp.normalize_data(train_data_no_outliers)
+test_data_normalized = dpp.normalize_data(test_data_no_outliers)
 
 # --------------------------------------------------------------------------------
 # -------------------- Step 5: Feature Extraction --------------------------------
 # Convert the raw data into segments
-train_data_segments = de.convert_to_segments(train_data_no_outliers, window_size, sample_rate)
-test_data_segments = de.convert_to_segments(test_data_no_outliers, window_size, sample_rate)
+train_data_segments = de.convert_to_segments(train_data_normalized, window_size, sample_rate)
+test_data_segments = de.convert_to_segments(test_data_normalized, window_size, sample_rate)
 
 # Extract features from the segments
 train_data_features = de.extract_features(train_data_segments)
@@ -97,10 +102,6 @@ de.save_features_to_csv(test_data_features, test_data_filename)
 
 # --------------------------------------------------------------------------------
 # -------------------- Step 4: Data Preprocessing --------------------------------
-# Apply normalization to the raw training and test data sets
-train_data_normalized = dpp.normalize_data(train_data_no_outliers)
-test_data_normalized = dpp.normalize_data(test_data_no_outliers)
-
 # Convert the normalized data back into segments
 train_data_normalized_segments = de.convert_to_segments(train_data_normalized, window_size, sample_rate)
 test_data_normalized_segments = de.convert_to_segments(test_data_normalized, window_size, sample_rate)
@@ -121,14 +122,14 @@ print("Original class distribution:")
 print(pd.Series(train_data_y).value_counts())
 
 # Handle class imbalance
-train_data_features, train_data_normalized_y = dpp.handle_imbalance(train_data_features, train_data_y)
+train_data_features, train_dataset_y = dpp.handle_imbalance(train_data_features, train_data_y)
 
 # After SMOTE
 print("Resampled class distribution:")
-print(pd.Series(train_data_normalized_y).value_counts())
+print(pd.Series(train_dataset_y).value_counts())
 
 # Train and evaluate the classifier
-log_reg_model = dc.train_and_evaluate_logistic_regression(train_data_normalized_y, test_data_y, train_data_features, test_data_features)
+log_reg_model = dc.train_and_evaluate_logistic_regression(train_dataset_y, test_data_y, train_data_features, test_data_features)
 
 
 # --------------------------------------------------------------------------------
