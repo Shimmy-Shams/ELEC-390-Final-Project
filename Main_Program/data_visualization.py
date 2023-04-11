@@ -15,7 +15,7 @@ def plot_general_acceleration_vs_time(time, accelerationX, accelerationY, accele
     plt.plot(time, accelerationZ, color='blue', label="Acceleration Z")
     plt.title("General Acceleration [m/s^2] vs Time [sec] Line Plot")
     plt.legend()
-    #plt.show()
+    plt.show()
 
 
 # Visualizing the meta-data - time both through a gantt chart and through a bar plot
@@ -44,7 +44,7 @@ def plot_md_time_gantt(df_md_time_list):
         ax2.set_xlabel('System Time', fontsize=8)
         ax2.set_xlim(df_md_time['system_time_dt'].min(), df_md_time['system_time_dt'].max())
 
-    #plt.show()
+    plt.show()
 
 
 # Creating the bar plot
@@ -64,7 +64,7 @@ def plot_md_time_bar(df_md_time_list):
         ax.tick_params(axis='both', which='major', labelsize=5)
 
     # Display the chart
-    #plt.show()
+    plt.show()
 
 
 # Separating the Walking and Jumping Activities into classes
@@ -99,21 +99,9 @@ class Activity:
         axes[2].set_xlabel("Time (s)")
 
         fig.suptitle(f"{activity}: Scatter Plots of Accelerations vs Time of the {self.data_source} Data", fontsize=14)
-        #plt.show()
+        plt.show()
 
-    # Code for the line plot
-    def plot_line(self, activity):
-        data = self.filter_activity(activity)
-        plt.plot(data['Time (s)'], data['Acceleration x (m/s^2)'], color='red', label="Acceleration X")
-        plt.plot(data['Time (s)'], data['Acceleration y (m/s^2)'], color='green', label="Acceleration Y")
-        plt.plot(data['Time (s)'], data['Acceleration z (m/s^2)'], color='blue', label="Acceleration Z")
-        plt.title(f"{activity}: Line plot of Acceleration vs Time of the {self.data_source} Data")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Acceleration (m/s^2)")
-        plt.legend()
-        #plt.show()
-
-    # code for the histogram
+    # Code for the histogram
     def plot_histogram(self, activity):
         data = self.filter_activity(activity)
         plt.hist(data['Acceleration x (m/s^2)'], bins=50, color='red', alpha=0.5, label="Acceleration X")
@@ -123,32 +111,19 @@ class Activity:
         plt.xlabel("Acceleration (m/s^2)")
         plt.ylabel("Frequency")
         plt.legend()
-        #plt.show()
+        plt.show()
 
     # Code for the bar plot of the mean
     def plot_mean_bar(self, activity):
         data = self.filter_activity(activity)
         mean_accelerations = data[['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']].mean()
 
-        plt.bar(['Acceleration X', 'Acceleration Y', 'Acceleration Z'], mean_accelerations, color=['red', 'green', 'blue'])
+        plt.bar(['Acceleration X', 'Acceleration Y', 'Acceleration Z'], mean_accelerations,
+                color=['darkred', 'darkgreen', 'midnightblue'], edgecolor='black', linewidth=1)
         plt.title(f"{activity}: Mean Accelerations for the {self.data_source} Data")
         plt.xlabel("Acceleration Axis")
         plt.ylabel("Mean Acceleration (m/s^2)")
-        #plt.show()
-
-    # Code for the box plot
-    def plot_box(self, activity):
-        data = self.filter_activity(activity)
-        accelerations = data[['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']]
-
-        box_colors = dict(boxes='blue', whiskers='black', medians='red', caps='black')
-        flier_props = dict(markeredgecolor='black')
-        ax = accelerations.boxplot(vert=False, color=box_colors, flierprops=flier_props)
-
-        ax.set_title(f"{activity}: Box Plot of Accelerations for the {self.data_source} Data")
-        ax.set_xlabel("Acceleration (m/s^2)")
-        ax.set_ylabel("Acceleration Axis")
-        #plt.show()
+        plt.show()
 
     # Plot for the spectrogram
     def plot_spectrogram(self, activity):
@@ -174,4 +149,4 @@ class Activity:
             ax.set_xlabel('Time (s)')
             ax.set_ylabel('Frequency (Hz)')
 
-        #plt.show()
+        plt.show()
