@@ -4,7 +4,7 @@
 #
 
 # Import Statements
-from sklearn import preprocessing
+import numpy as np
 from matplotlib import pyplot as plt
 from imblearn.over_sampling import SMOTE
 from sklearn.preprocessing import StandardScaler
@@ -52,22 +52,44 @@ def moving_average_filter(df):
 
 # Plotting the filtered data
 def plot_filtered_data(df, filtered_data):
-    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 15))
+    num_window_sizes = len(filtered_data)
     acceleration_axes = ['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']
+    original_data_color = 'darkmagenta'
+    window_size_colors = {}
 
+    # Plot original data in a separate figure
+    fig1, axes1 = plt.subplots(nrows=3, ncols=1, figsize=(10, 15))
     for i, col in enumerate(acceleration_axes):
-        for window_size, filtered_df in filtered_data.items():
-            axes[i].scatter(filtered_df['Time (s)'], filtered_df[col], label=f"{window_size}", s=10)
+        axes1[i].scatter(df['Time (s)'], df[col], label="Original data", s=5, color=original_data_color)
+        axes1[i].set_title(col)
+        axes1[i].set_xlabel("Time (s)")
+        axes1[i].set_ylabel("Acceleration (m/s^2)")
+        axes1[i].legend()
 
-        # Plotting the original data
-        axes[i].scatter(df['Time (s)'], df[col], label="Original data", alpha=0.3, s=10)
-        axes[i].set_title(col)
-        axes[i].set_xlabel("Time (s)")
-        axes[i].set_ylabel("Acceleration (m/s^2)")
-        axes[i].legend()
+    plt.tight_layout()
+    plt.show()
 
-    #plt.tight_layout()
-    #plt.show()
+    # Function to generate a random color
+    def random_color():
+        return np.random.rand(3, )
+
+    # Plot filtered data in a separate figure
+    fig2, axes2 = plt.subplots(nrows=3, ncols=num_window_sizes, figsize=(10 * num_window_sizes, 15))
+    for i, col in enumerate(acceleration_axes):
+        for j, (window_size, filtered_df) in enumerate(filtered_data.items()):
+            # Get the color for the current window size, if not found, generate a random color
+            filtered_data_color = window_size_colors.get(window_size, random_color())
+
+            # Plotting the filtered data
+            axes2[i, j].scatter(filtered_df['Time (s)'], filtered_df[col], label=f"Filtered: {window_size}", s=2,
+                                color=filtered_data_color)
+            axes2[i, j].set_title(f"{col} - Window size: {window_size}")
+            axes2[i, j].set_xlabel("Time (s)")
+            axes2[i, j].set_ylabel("Acceleration (m/s^2)")
+            axes2[i, j].legend()
+
+    plt.tight_layout()
+    plt.show()
 
 
 # Applying an exponential moving average to further reduce noise
@@ -122,7 +144,4 @@ def plot_normalized_data_histograms(data_normalized):
         axes[i].set_xlabel("Acceleration (m/s^2)")
         axes[i].set_ylabel("Frequency")
         axes[i].legend()
-
-    #plt.tight_layout()
-   # plt.show()
-
+    plt.show()

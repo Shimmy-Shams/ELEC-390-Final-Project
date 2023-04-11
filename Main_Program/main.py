@@ -83,11 +83,6 @@ train_data_visualization.plot_scatter("Jumping")
 test_data_visualization.plot_scatter("Walking")
 test_data_visualization.plot_scatter("Jumping")
 
-# Line plots
-train_data_visualization.plot_line("Walking")
-train_data_visualization.plot_line("Jumping")
-test_data_visualization.plot_line("Walking")
-test_data_visualization.plot_line("Jumping")
 
 # Histograms
 train_data_visualization.plot_histogram("Walking")
@@ -101,11 +96,6 @@ train_data_visualization.plot_mean_bar("Jumping")
 test_data_visualization.plot_mean_bar("Walking")
 test_data_visualization.plot_mean_bar("Jumping")
 
-# Box Plot
-train_data_visualization.plot_box("Walking")
-train_data_visualization.plot_box("Jumping")
-test_data_visualization.plot_box("Walking")
-test_data_visualization.plot_box("Jumping")
 
 # Spectrogram
 train_data_visualization.plot_spectrogram("Walking")
@@ -151,6 +141,10 @@ test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=2)
 # Apply normalization to the raw training and test data sets
 train_data_normalized = dpp.normalize_data(train_data_no_outliers)
 test_data_normalized = dpp.normalize_data(test_data_no_outliers)
+print(train_data_normalized.head())
+print(train_data_normalized.shape)
+print(test_data_normalized.head())
+print(test_data_normalized.shape)
 dpp.plot_normalized_data_histograms(train_data_normalized)
 dpp.plot_normalized_data_histograms(test_data_normalized)
 
