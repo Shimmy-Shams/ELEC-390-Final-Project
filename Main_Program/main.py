@@ -49,8 +49,8 @@ segments = dp.segment_data(data, window_size, sample_rate)
 # Shuffle and create train and test splits
 train_data, test_data = dp.create_splits(segments)
 # Saving the Test data to test the classifier in the app
-normalized_test_data_filename = "Data/Test_data.csv"
-de.save_features_to_csv(test_data, normalized_test_data_filename)
+test_data_filename = "Data/Input for the app/Test_data.csv"
+de.save_features_to_csv(test_data, test_data_filename)
 
 # Save data to HDF5 file
 dp.write_to_hdf5(data, csv_file_paths, train_data, test_data)
@@ -125,7 +125,7 @@ test_data_filtered = dpp.moving_average_filter(test_data)
 dpp.plot_filtered_data(train_data, train_data_filtered)
 dpp.plot_filtered_data(test_data, test_data_filtered)
 
-# Select the filtered data with window size 50
+# Select the filtered data with window size 100
 selected_window_size = 100
 train_data_filtered_100 = train_data_filtered[f'window_size_{selected_window_size}']
 test_data_filtered_100 = test_data_filtered[f'window_size_{selected_window_size}']
@@ -134,6 +134,7 @@ test_data_filtered_100 = test_data_filtered[f'window_size_{selected_window_size}
 train_data_ema_filtered = dpp.exponential_moving_average_filter(train_data_filtered_100, alpha=0.15)
 test_data_ema_filtered = dpp.exponential_moving_average_filter(test_data_filtered_100, alpha=0.15)
 
+
 # Removing outliers
 train_data_no_outliers = dpp.remove_outliers(train_data_ema_filtered, threshold=2)
 test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=2)
@@ -141,10 +142,6 @@ test_data_no_outliers = dpp.remove_outliers(test_data_ema_filtered, threshold=2)
 # Apply normalization to the raw training and test data sets
 train_data_normalized = dpp.normalize_data(train_data_no_outliers)
 test_data_normalized = dpp.normalize_data(test_data_no_outliers)
-print(train_data_normalized.head())
-print(train_data_normalized.shape)
-print(test_data_normalized.head())
-print(test_data_normalized.shape)
 dpp.plot_normalized_data_histograms(train_data_normalized)
 dpp.plot_normalized_data_histograms(test_data_normalized)
 
@@ -185,17 +182,15 @@ print("test_data_normalized_y length:", len(test_data_y))
 print("Original class distribution:")
 print(pd.Series(train_data_y).value_counts())
 
-
 # Handle class imbalance
-train_data_features, train_data_y = dpp.handle_imbalance(train_data_features, train_data_y)
-
+train_data_features, train_dataset_y = dpp.handle_imbalance(train_data_features, train_data_y)
 
 # After SMOTE
 print("Resampled class distribution:")
-print(pd.Series(train_data_y).value_counts())
+print(pd.Series(train_dataset_y).value_counts())
 
 # Train and evaluate the classifier
-log_reg_model = dc.train_and_evaluate_logistic_regression(train_data_y, test_data_y, train_data_features, test_data_features)
+log_reg_model = dc.train_and_evaluate_logistic_regression(train_dataset_y, test_data_y, train_data_features, test_data_features)
 
 
 # --------------------------------------------------------------------------------

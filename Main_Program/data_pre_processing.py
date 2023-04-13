@@ -78,7 +78,7 @@ def plot_filtered_data(df, filtered_data):
     for i, col in enumerate(acceleration_axes):
         for j, (window_size, filtered_df) in enumerate(filtered_data.items()):
             # Get the color for the current window size, if not found, generate a random color
-            filtered_data_color = window_size_colors.get(window_size, random_color())
+            filtered_data_color = 'midnightblue'
 
             # Plotting the filtered data
             axes2[i, j].scatter(filtered_df['Time (s)'], filtered_df[col], label=f"Filtered: {window_size}", s=2,
