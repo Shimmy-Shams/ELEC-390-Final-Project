@@ -58,7 +58,7 @@ def classify_motion(filepath):
     data_normalized = normalize_data(data_filtered_window_size)
 
     # Segment the data
-    segmented_data = convert_to_segments(data_normalized, window_size=5, sample_rate=100)
+    segmented_data = convert_to_segments(data_filtered_window_size, window_size=5, sample_rate=100)
 
     # Extract features
     features = extract_features(segmented_data)
@@ -103,7 +103,7 @@ def display_results(results):
     # Create a new window
     results_window = tk.Toplevel(root)
     results_window.title("Results")
-    results_window.geometry('1300x800')
+    results_window.geometry('1500x800')
     results_window.config(bg='#ADD8E6')
 
     # Add label with results to the window
@@ -121,7 +121,7 @@ def display_results(results):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Convert the DataFrame to a string and display it in a text widget
-    results_text = tk.Text(text_frame, wrap=tk.WORD, padx=10, pady=10, width=150, height=40,
+    results_text = tk.Text(text_frame, wrap=tk.WORD, padx=10, pady=10, width=170, height=40,
                            yscrollcommand=scrollbar.set)
     results_text.insert(tk.INSERT, results.to_string(index=False))
     results_text.pack(side=tk.LEFT, fill=tk.BOTH)
