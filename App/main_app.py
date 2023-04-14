@@ -186,7 +186,7 @@ def real_time_classification(sleep_interval=0.001, initial_wait=3, data_points=1
                 selected_window = 100
                 data_filtered_window_size = data_filtered[f'window_size_{selected_window}']
                 data_ema_filtered = exponential_moving_average_filter(data_filtered_window_size, alpha=0.2)
-                data_normalized = normalize_data(data_filtered)
+                data_normalized = normalize_data(data_ema_filtered)
 
                 # Segment the cleaned data into smaller windows for analysis
                 segmented_data = convert_to_segments(data_normalized, window_size=1, sample_rate=100)
